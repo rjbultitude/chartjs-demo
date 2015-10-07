@@ -21,8 +21,7 @@ function getData(url, success, failure) {
 			var jsonText = request.responseText;
 			var jsonResponse = JSON.parse(jsonText);
 			success(jsonResponse);
-		}
-		else if (request.status === 404) {
+		} else if (request.status === 404) {
 			failure(request.status + ' ' + readyStates[request.readyState]);
 		}
 	}
@@ -30,40 +29,40 @@ function getData(url, success, failure) {
 }
 
 //get overall data
-getData('data/2014_results_overall.json', 
+getData('data/2014_results_overall.json',
 	function(data) {
 		overallData = data;
-},
+	},
 	function(status) {
 		console.log('there was an error: ' + status);
-});
+	});
 
 //get school data
-getData('data/2014_results_school.json', 
+getData('data/2014_results_school.json',
 	function(data) {
 		schoolData = data;
-},
+	},
 	function(status) {
 		console.log('there was an error: ' + status);
-});
+	});
 
 //get colours
-getData('data/colours.json', 
+getData('data/colours.json',
 	function(data) {
 		colours = data;
-},
+	},
 	function(status) {
 		console.log('there was an error: ' + status);
-});
+	});
 
 //get colours Alpha
-getData('data/colours-alpha.json', 
+getData('data/colours-alpha.json',
 	function(data) {
 		coloursAlpha = data;
-},
+	},
 	function(status) {
 		console.log('there was an error: ' + status);
-});
+	});
 
 /*
  * Structure the datasets
@@ -72,7 +71,10 @@ getData('data/colours-alpha.json',
 //Data Pair is for Lines, Bars and Radar charts
 var dataPair = {
 	labels: [],
-	datasets: [{data: null, fillColor: null}],
+	datasets: [{
+		data: null,
+		fillColor: null
+	}],
 }
 
 function getHighestNumber(prop) {
@@ -92,7 +94,10 @@ function SingleDataConstructor(data) {
 	for (var i = 0; i < data.length; i++) {
 		var thisDataNode = data[i];
 
-		thisObj = {label: null, value: null};
+		thisObj = {
+			label: null,
+			value: null
+		};
 
 		for (var prop in thisDataNode) {
 			//extract labels
@@ -116,27 +121,38 @@ function MultiDataConstructor() {
 	this.labels = [];
 	this.datasets = [];
 
-	//Get number rows
+	var x = 0;
+	var y = 0;
+	var z = 0;
+	//Run through each data set
 	for (var j = 0; j < arguments.length; j++) {
 
-		var thisData = arguments[j];
+		var thisDataSet = arguments[j];
 
 		this.datasets[j] = {
-			data: [], 
+			data: [],
 			fillColor: ''
 		};
 
-		for (var i = 0; i < thisData.length; i++) {
-			var thisObj = thisData[i];
-
+		dataSetLoop:
+		for (var i = 0; i < thisDataSet.length; i++) {
+			var thisObj = thisDataSet[i];
+			
+			objectLoop:
 			for (var prop in thisObj) {
-				//extract labels
-				if (prop === 'Label') {
-					this.labels.push(thisObj[prop]);
-				}
 				//extract numbers
-				else if (prop === 'Series') {
+				if (prop === 'Series') {
 					this.datasets[j].data.push(thisObj[prop]);
+				}
+				//Only get labels when in 1st dataset
+				if (j > 0) {
+					continue objectLoop;
+				}
+				else {
+					//extract labels
+					if (prop === 'Label') {
+						this.labels.push(thisObj[prop]);
+					}
 				}
 			}
 
@@ -145,10 +161,6 @@ function MultiDataConstructor() {
 			this.datasets[j].pointColor = coloursAlpha[j].pointColor;
 		}
 	}
-	//get rid of duplicate labels
-	//TODO needs refactoring
-	var labelsLength = this.labels.length;
-	this.labels.splice(labelsLength/2, labelsLength/2);
 }
 
 //Data Single Node is for Pies, Donuts and Polar area charts
@@ -171,22 +183,17 @@ function chartLoader(chartType) {
 		//console.log('myChart', myChart);
 		myChart.destroy();
 	}
-	if (chartType === 'line') {
+	if (chartType === 'Line') {
 		myChart = new Chart(ctx).Line(overalSchoolModel);
-	}
-	else if (chartType === 'bar') {
+	} else if (chartType === 'Bar') {
 		myChart = new Chart(ctx).Bar(overalSchoolModel);
-	}
-	else if (chartType === 'radar') {
+	} else if (chartType === 'Radar') {
 		myChart = new Chart(ctx).Radar(overalSchoolModel);
-	}
-	else if (chartType === 'pie') {
+	} else if (chartType === 'Pie') {
 		myChart = new Chart(ctx).Pie(overallSingModel.arr);
-	}
-	else if (chartType === 'polar') {
-		myChart = new Chart(ctx).PolarArea(overallSingModel.arr);	
-	}
-	else {
+	} else if (chartType === 'Polar') {
+		myChart = new Chart(ctx).PolarArea(overallSingModel.arr);
+	} else {
 		console.log('Incorrect chart type string');
 	}
 }
@@ -195,7 +202,7 @@ function chartLoader(chartType) {
  * Init
  */
 Chart.defaults.global.responsive = true;
-chartLoader('line');
+chartLoader('Line');
 
 /*
  * Button handlers
@@ -204,10 +211,10 @@ chartLoader('line');
 var controlsContainer = document.getElementById('controls');
 //Load charts based on text content of child nodes
 controlsContainer.addEventListener('click', function(e) {
-	Array.prototype.forEach.call(controlsContainer.querySelectorAll('.btn'), function (el) {
-    if (el === e.target) {
-				var text = e.target.innerText;
-				chartLoader(text);
-    }
-  });
+	Array.prototype.forEach.call(controlsContainer.querySelectorAll('.btn'), function(el) {
+		if (el === e.target) {
+			var text = e.target.innerText;
+			chartLoader(text);
+		}
+	});
 });
