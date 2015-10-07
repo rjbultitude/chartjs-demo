@@ -4,6 +4,7 @@
 
 var schoolData = null;
 var overallData = null;
+var colours = null;
 
 function getData(url, success, failure) {
 	var readyStates = ['UNSENT', 'OPENED', 'HEADERS_RECEIVED', 'LOADING', 'DONE'];
@@ -29,9 +30,9 @@ function getData(url, success, failure) {
 }
 
 //get overall data
-getData('2014_results_Overall.json', 
+getData('data/2014_results_overall.json', 
 	function(data) {
-		console.log('data', data);
+		//console.log('data', data);
 		overallData = data;
 },
 	function(status) {
@@ -39,19 +40,24 @@ getData('2014_results_Overall.json',
 });
 
 //get school data
-getData('2014_results_school.json', 
+getData('data/2014_results_school.json', 
 	function(data) {
-		console.log('data', data);
+		//console.log('data', data);
 		schoolData = data;
 },
 	function(status) {
 		console.log('there was an error: ' + status);
 });
 
-//Init vars
-var colours = ['#0086cf', '#6bcf00', '#0058cf', '#cfaf00', '#F5712F', '#79BAF2', '#0086cf', '#6bcf00', '#0058cf', '#cfaf00', '#F5712F', '#79BAF2', '#0086cf', '#6bcf00', '#0058cf', '#cfaf00', '#F5712F', '#79BAF2'];
-var myChart = undefined;
-
+//get colours
+getData('data/colours.json', 
+	function(data) {
+		//console.log('data', data);
+		colours = data;
+},
+	function(status) {
+		console.log('there was an error: ' + status);
+});
 
 /*
  * Structure the datasets
@@ -88,73 +94,78 @@ function getHighestNumber(prop) {
 	return highestNum;
 }
 
-//structure data
-function structureSingleData(data) {
-	for (var i = 0; i < data.length; i++) {
-		var thisObj = data[i];
-		var tempObj = {label: null, value: null};
-		var dataSingModel = [];
-		var label;
-		var series;
+function SingleDataConstructor(data) {
+	this.arr = [];
 
-		for (var prop in thisObj) {
+	for (var i = 0; i < data.length; i++) {
+		var thisDataNode = data[i];
+
+		thisObj = {label: null, value: null};
+
+		for (var prop in thisDataNode) {
 			//extract labels
 			if (prop === 'Label') {
-				label = thisObj[prop];
+				thisObj.label = thisDataNode[prop];
 			}
 			//extract numbers
 			else if (prop === 'Series') {
-				series = thisObj[prop];
+				thisObj.value = thisDataNode[prop];
 			}
 		}
 		//build new models
-		tempObj.color = colours[i];
-		tempObj.highlight = colours[i];
-		var dataSingNode = new DataSingularNode(tempObj);
-		dataSingModel.push(dataSingNode);
-
+		thisObj.color = colours[i];
+		thisObj.highlight = colours[i];
+		this.arr.push(thisObj);
 	}
-	return dataSingModel;
 }
 
-function structureMultiData() {
-	var dataDuelModel = null;
+function MultiDataConstructor() {
+
+	this.labels = [];
+	this.datasets = [];
+
+	//Get number rows
 	for (var j = 0; j < arguments.length; j++) {
+
 		var thisData = arguments[j];
+
+		this.datasets[j] = {
+			data: [], 
+			fillColor: ''
+		};
+
 		for (var i = 0; i < thisData.length; i++) {
 			var thisObj = thisData[i];
-			var tempObj = {labels: [], datasets: [{data: [], fillColor: null}]};
-			var label = null;
-			var series = [];
 
 			for (var prop in thisObj) {
 				//extract labels
 				if (prop === 'Label') {
-					label = thisObj[prop];
+					this.labels.push(thisObj[prop]);
 				}
 				//extract numbers
 				else if (prop === 'Series') {
-					series.push(thisObj[prop]);
+					this.datasets[j].data.push(thisObj[prop]);
 				}
 			}
-			//build new models
-			tempObj.labels.push(label);
-			console.log('tempObj', tempObj);
-			tempObj.datasets[j].data.push(series);
-			tempObj.datasets[j].fillColor = colours[j];
+
+			this.datasets[j].fillColor = colours[j];
 		}
 	}
-	return dataDuelModel;
+	var labelsLength = this.labels.length;
+	this.labels.splice(labelsLength/2, labelsLength/2);
 }
 
 //Data Single Node is for Pies, Donuts and Polar area charts
-var overallSingModel = structureSingleData(overallData);
-var schoolSingModel = structureSingleData(schoolData);
-var overalSchoolModel = structureMultiData(overallData, schoolData);
+var overallSingModel = new SingleDataConstructor(overallData);
+var schoolSingModel = new SingleDataConstructor(schoolData);
+var overalSchoolModel = new MultiDataConstructor(overallData, schoolData);
+console.log('overallSingModel', overallSingModel);
+console.log('overalSchoolModel', overalSchoolModel);
 
 /*
- * Canvas init
+ * Init app
  */
+var myChart = undefined;
 var ctx = document.getElementById('myChart').getContext('2d');
 
 /*
@@ -167,19 +178,19 @@ function chartLoader(chartType) {
 		myChart.destroy();
 	}
 	if (chartType === 'line') {
-		myChart = new Chart(ctx).Line(dataPair);
+		myChart = new Chart(ctx).Line(overalSchoolModel);
 	}
 	else if (chartType === 'bar') {
-		myChart = new Chart(ctx).Bar(dataCompare);
+		myChart = new Chart(ctx).Bar(overalSchoolModel);
 	}
 	else if (chartType === 'radar') {
-		myChart = new Chart(ctx).Radar(dataPair);
+		myChart = new Chart(ctx).Radar(overalSchoolModel);
 	}
 	else if (chartType === 'pie') {
-		myChart = new Chart(ctx).Pie(dataSing);
+		myChart = new Chart(ctx).Pie(overallSingModel.arr);
 	}
 	else if (chartType === 'polar') {
-		myChart = new Chart(ctx).PolarArea(dataSing);	
+		myChart = new Chart(ctx).PolarArea(overallSingModel.arr);	
 	}
 	else {
 		console.log('Incorrect chart type string');
