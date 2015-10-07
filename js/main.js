@@ -5,6 +5,7 @@
 var schoolData = null;
 var overallData = null;
 var colours = null;
+var coloursAlpha = null;
 
 function getData(url, success, failure) {
 	var readyStates = ['UNSENT', 'OPENED', 'HEADERS_RECEIVED', 'LOADING', 'DONE'];
@@ -19,11 +20,10 @@ function getData(url, success, failure) {
 			//handle JSON
 			var jsonText = request.responseText;
 			var jsonResponse = JSON.parse(jsonText);
-			//console.log(jsonResponse);
 			success(jsonResponse);
 		}
 		else if (request.status === 404) {
-			failure(request.status + readyStates[request.readyState]);
+			failure(request.status + ' ' + readyStates[request.readyState]);
 		}
 	}
 	request.send(null);
@@ -32,7 +32,6 @@ function getData(url, success, failure) {
 //get overall data
 getData('data/2014_results_overall.json', 
 	function(data) {
-		//console.log('data', data);
 		overallData = data;
 },
 	function(status) {
@@ -42,7 +41,6 @@ getData('data/2014_results_overall.json',
 //get school data
 getData('data/2014_results_school.json', 
 	function(data) {
-		//console.log('data', data);
 		schoolData = data;
 },
 	function(status) {
@@ -52,8 +50,16 @@ getData('data/2014_results_school.json',
 //get colours
 getData('data/colours.json', 
 	function(data) {
-		//console.log('data', data);
 		colours = data;
+},
+	function(status) {
+		console.log('there was an error: ' + status);
+});
+
+//get colours Alpha
+getData('data/colours-alpha.json', 
+	function(data) {
+		coloursAlpha = data;
 },
 	function(status) {
 		console.log('there was an error: ' + status);
@@ -67,20 +73,6 @@ getData('data/colours.json',
 var dataPair = {
 	labels: [],
 	datasets: [{data: null, fillColor: null}],
-}
-
-//Singular level model constructor
-function DataSingularNode(obj) {
-	this.label = obj.label;
-	this.value = obj.value;
-	this.color = obj.color;
-	this.highlight = obj.highlight;
-}
-
-//Singular level model constructor
-function DataDuelModel(obj) {
-	this.labels = obj.labels;
-	this.datasets = obj.datasets;
 }
 
 function getHighestNumber(prop) {
@@ -148,9 +140,13 @@ function MultiDataConstructor() {
 				}
 			}
 
-			this.datasets[j].fillColor = colours[j];
+			this.datasets[j].fillColor = coloursAlpha[j].fillColor;
+			this.datasets[j].strokeColor = coloursAlpha[j].strokeColor;
+			this.datasets[j].pointColor = coloursAlpha[j].pointColor;
 		}
 	}
+	//get rid of duplicate labels
+	//TODO needs refactoring
 	var labelsLength = this.labels.length;
 	this.labels.splice(labelsLength/2, labelsLength/2);
 }
@@ -159,8 +155,6 @@ function MultiDataConstructor() {
 var overallSingModel = new SingleDataConstructor(overallData);
 var schoolSingModel = new SingleDataConstructor(schoolData);
 var overalSchoolModel = new MultiDataConstructor(overallData, schoolData);
-console.log('overallSingModel', overallSingModel);
-console.log('overalSchoolModel', overalSchoolModel);
 
 /*
  * Init app
@@ -174,7 +168,7 @@ var ctx = document.getElementById('myChart').getContext('2d');
 function chartLoader(chartType) {
 	//remove any previous instances
 	if (myChart !== undefined) {
-		console.log('myChart', myChart);
+		//console.log('myChart', myChart);
 		myChart.destroy();
 	}
 	if (chartType === 'line') {
@@ -206,24 +200,14 @@ chartLoader('line');
 /*
  * Button handlers
  */
-var lineBtn = document.getElementById('line');
-var barBtn = document.getElementById('bar');
-var radarBtn = document.getElementById('radar');
-var pieBtn = document.getElementById('pie');
-var polarBtn = document.getElementById('polar');
-
-lineBtn.addEventListener('click', function() {
-	chartLoader('line');
-});
-barBtn.addEventListener('click', function() {
-	chartLoader('bar');
-});
-radarBtn.addEventListener('click', function() {
-	chartLoader('radar');
-});
-pieBtn.addEventListener('click', function() {
-	chartLoader('pie');
-});
-polarBtn.addEventListener('click', function() {
-	chartLoader('polar');
+//Get parent DOM node
+var controlsContainer = document.getElementById('controls');
+//Load charts based on text content of child nodes
+controlsContainer.addEventListener('click', function(e) {
+	Array.prototype.forEach.call(controlsContainer.querySelectorAll('.btn'), function (el) {
+    if (el === e.target) {
+				var text = e.target.innerText;
+				chartLoader(text);
+    }
+  });
 });
