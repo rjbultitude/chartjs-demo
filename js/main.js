@@ -7,29 +7,8 @@ var overallData = null;
 var colours = null;
 var coloursAlpha = null;
 
-function getData(url, success, failure) {
-	var readyStates = ['UNSENT', 'OPENED', 'HEADERS_RECEIVED', 'LOADING', 'DONE'];
-	var request = new XMLHttpRequest();
-	request.open('GET', url, false);
-
-	request.onreadystatechange = function() {
-		if (request.readyState === 4 && request.status === 200) {
-			//store response
-			var response = request.response;
-			var responseType = request.getResponseHeader('content-type');
-			//handle JSON
-			var jsonText = request.responseText;
-			var jsonResponse = JSON.parse(jsonText);
-			success(jsonResponse);
-		} else if (request.status === 404) {
-			failure(request.status + ' ' + readyStates[request.readyState]);
-		}
-	}
-	request.send(null);
-}
-
 //get overall data
-getData('data/2014_results_overall.json',
+getJSON('data/2014_results_overall.json',
 	function(data) {
 		overallData = data;
 	},
@@ -38,7 +17,7 @@ getData('data/2014_results_overall.json',
 	});
 
 //get school data
-getData('data/2014_results_school.json',
+getJSON('data/2014_results_school.json',
 	function(data) {
 		schoolData = data;
 	},
@@ -47,7 +26,7 @@ getData('data/2014_results_school.json',
 	});
 
 //get colours
-getData('data/colours.json',
+getJSON('data/colours.json',
 	function(data) {
 		colours = data;
 	},
@@ -56,7 +35,7 @@ getData('data/colours.json',
 	});
 
 //get colours Alpha
-getData('data/colours-alpha.json',
+getJSON('data/colours-alpha.json',
 	function(data) {
 		coloursAlpha = data;
 	},
@@ -213,7 +192,8 @@ var controlsContainer = document.getElementById('controls');
 controlsContainer.addEventListener('click', function(e) {
 	Array.prototype.forEach.call(controlsContainer.querySelectorAll('.btn'), function(el) {
 		if (el === e.target) {
-			var text = e.target.innerText;
+			var text = e.target.innerText || e.target.textContent.replace( /\s/g, '' );
+			console.log('text', text);
 			chartLoader(text);
 		}
 	});

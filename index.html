@@ -34,6 +34,11 @@
     	button {
     		display: inline-block;;
     	}
+
+    	form {
+    		display: none;
+    	}
+
     </style>
 </head>
 <body>
@@ -56,8 +61,14 @@
 				Polar
 			</button>
 		</div>
+		<form id="form-update">
+			<label for="blackbird">Blackbird</label>
+			<input id="blackbird" type="number" />
+			<button id="btn-update">Submit</button>
+		</div>
 	</div>
 	<script src="js/chart.js"></script>
+	<script src="js/get-json.js"></script>
 	<script src="js/main.js"></script>
 </body>
 </html>
