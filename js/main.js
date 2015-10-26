@@ -7,6 +7,10 @@ var overallData = null;
 var colours = null;
 var coloursAlpha = null;
 
+var overallSingModel;
+var schoolSingModel;
+var overalSchoolModel;
+
 //get overall data
 getJSON('data/2014_results_overall.json',
 	function(data) {
@@ -142,28 +146,37 @@ function MultiDataConstructor() {
 	}
 }
 
-//Data Single Node is for Pies, Donuts and Polar area charts
-var overallSingModel = new SingleDataConstructor(overallData);
-var schoolSingModel = new SingleDataConstructor(schoolData);
-var overalSchoolModel = new MultiDataConstructor(overallData, schoolData);
+function structureData() {
+	//Data Single Node is for Pies, Donuts and Polar area charts
+	overallSingModel = new SingleDataConstructor(overallData);
+	schoolSingModel = new SingleDataConstructor(schoolData);
+	overalSchoolModel = new MultiDataConstructor(overallData, schoolData);
+}
 
 /*
  * Init app
  */
+structureData();
 var myChart = undefined;
 var ctx = document.getElementById('myChart').getContext('2d');
+var options = {
+	legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"background-color:<%=datasets[i].strokeColor%>\"></span><%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>"
+}
 
 /*
  * Manage charts
  */
-function chartLoader(chartType) {
+function chartLoader(chartType, update) {
 	//remove any previous instances
-	if (myChart !== undefined) {
+	if (update === true) {
+		myChart.update();
+	}
+	else if (myChart !== undefined) {
 		//console.log('myChart', myChart);
 		myChart.destroy();
 	}
 	if (chartType === 'Line') {
-		myChart = new Chart(ctx).Line(overalSchoolModel);
+		myChart = new Chart(ctx).Line(overalSchoolModel, options);
 	} else if (chartType === 'Bar') {
 		myChart = new Chart(ctx).Bar(overalSchoolModel);
 	} else if (chartType === 'Radar') {
@@ -175,6 +188,7 @@ function chartLoader(chartType) {
 	} else {
 		console.log('Incorrect chart type string');
 	}
+	myChart.generateLegend();
 }
 
 /*
@@ -182,6 +196,11 @@ function chartLoader(chartType) {
  */
 Chart.defaults.global.responsive = true;
 chartLoader('Line');
+
+var updateBtn = document.getElementById('update');
+updateBtn.addEventListener('click', function() {
+	chartLoader('Line', true);	
+});
 
 /*
  * Button handlers
