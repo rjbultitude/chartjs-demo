@@ -47,6 +47,14 @@ getJSON('data/colours-alpha.json',
 		console.log('there was an error: ' + status);
 	});
 
+//Manage full screen mode
+var displayContainer = document.getElementById('container');
+document.addEventListener('keydown', function(e) {
+  if (e.keyCode == 13) {
+    toggleFullScreen(displayContainer);
+  }
+}, false);
+
 /*
  * Structure the datasets
  */
